@@ -57,7 +57,12 @@ function LoginPage(): React.JSX.Element {
 								Please enter your password
 							</Field.Error>
 						</Field.Root>
-						<Button type="submit" size="medium" variant="primary">
+						<Button
+							className="mt-6"
+							type="submit"
+							size="medium"
+							variant="primary"
+						>
 							Log In
 						</Button>
 					</Form>

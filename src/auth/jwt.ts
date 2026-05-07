@@ -4,7 +4,6 @@ import {
 	joseAlgorithmHS256,
 } from "@oslojs/jwt";
 
-// 1. Explicitly type the header and payload using interfaces
 interface TokenHeader {
 	alg: typeof joseAlgorithmHS256;
 	typ: "JWT";
@@ -40,10 +39,8 @@ async function createMyToken(): Promise<string> {
 		["sign"],
 	);
 
-	// 2. Convert the string message into a Uint8Array
 	const signatureMessageBytes = encoder.encode(signatureMessage);
 
-	// 3. Pass the byte array to the Web Crypto API, not the string
 	const signatureBuffer = await crypto.subtle.sign(
 		"HMAC",
 		cryptoKey,

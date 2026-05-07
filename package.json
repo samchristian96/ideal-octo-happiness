@@ -8,16 +8,17 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
-    "@tanstack/react-router": "^1.169.1",
-    "@tanstack/react-start": "^1.167.63",
+    "@oslojs/jwt": "^0.3.0",
+    "@tanstack/react-router": "^1.169.2",
+    "@tanstack/react-start": "^1.167.65",
     "@tanstack/react-store": "^0.11.0",
     "@tanstack/react-table": "^8.21.3",
-    "tailwind-merge": "^3.5.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.14.0",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5"
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.14",
@@ -28,6 +29,6 @@
     "@vitejs/plugin-react": "^6.0.1",
     "tailwindcss": "^4.2.4",
     "typescript": "^6.0.3",
-    "vite": "^8.0.10"
+    "vite": "^8.0.11"
   }
 }

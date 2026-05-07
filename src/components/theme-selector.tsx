@@ -20,8 +20,7 @@ export function ThemeSelector(): React.JSX.Element {
 
 	return (
 		<Tabs.Root
-			className=
-			"relative inline-flex shadow-sm rounded-full border border-slate-200 bg-slate-100 dark:bg-slate-800 dark:border-slate-700"
+			className="relative inline-flex shadow-sm rounded-full border border-slate-200 bg-slate-100 dark:bg-slate-800 dark:border-slate-700"
 			value={theme}
 			onValueChange={(value) => changeTheme(value)}
 		>
@@ -29,18 +28,21 @@ export function ThemeSelector(): React.JSX.Element {
 				<Tabs.Tab
 					className="relative flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-none bg-transparent text-slate-500 transition-colors duration-200 ease-in-out hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
 					value="system"
+					suppressHydrationWarning
 				>
 					<MonitorCog size="1.125rem" />
 				</Tabs.Tab>
 				<Tabs.Tab
 					className="relative flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-none bg-transparent text-slate-500 transition-colors duration-200 ease-in-out hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
 					value="light"
+					suppressHydrationWarning
 				>
 					<Sun size="1.125rem" />
 				</Tabs.Tab>
 				<Tabs.Tab
 					className="relative flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-none bg-transparent text-slate-500 transition-colors duration-200 ease-in-out hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
 					value="dark"
+					suppressHydrationWarning
 				>
 					<Moon size="1.125rem" />
 				</Tabs.Tab>

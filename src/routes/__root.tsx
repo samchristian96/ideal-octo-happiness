@@ -23,6 +23,10 @@ export const Route = createRootRoute({
 				content: "light dark",
 			},
 			{
+				name: "theme-color",
+				content: "#ffffff",
+			},
+			{
 				title: "TanStack Start Starter",
 			},
 		],
