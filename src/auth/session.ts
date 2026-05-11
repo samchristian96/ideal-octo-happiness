@@ -4,7 +4,7 @@ import { sql } from "bun";
 import { cookies } from "next/headers";
 import { cache } from "react";
 
-const SESSION_COOKIE_NAME = "user_session";
+const SESSION_COOKIE_NAME = "admin_session";
 const DAY_IN_MS = 1000 * 60 * 60 * 24;
 
 type CookieType = ReturnType<Awaited<ReturnType<typeof cookies>>["get"]>;
@@ -68,17 +68,17 @@ export async function verifySession(
 ): Promise<SessionData | null> {
 	const rows = await sql<SessionData[]>`
 		SELECT
-			user_sessions.token_hash AS "sessionId",
-			user_sessions.user_id AS "userId",
-			user_sessions.expires_at AS "expiresAt",
-			user_sessions.two_factor_verified AS "twoFactorVerified",
-			users.email,
-			users.email_verified AS "emailVerified",
+			admin_sessions.token_hash AS "sessionId",
+			admin_sessions.user_id AS "userId",
+			admin_sessions.expires_at AS "expiresAt",
+			admin_sessions.two_factor_verified AS "twoFactorVerified",
+			admins.email,
+			admins.email_verified AS "emailVerified",
 			(user_totp.user_id IS NOT NULL) AS "hasTotp"
-		FROM user_sessions
-		INNER JOIN users ON user_sessions.user_id = users.id
-		LEFT JOIN user_totp ON users.id = user_totp.user_id
-		WHERE user_sessions.token_hash = ${tokenHash}
+		FROM admin_sessions
+		INNER JOIN admins ON admin_sessions.user_id = admins.id
+		LEFT JOIN admin_totp ON admin_sessions.id = admin_totp.user_id
+		WHERE admin_sessions.token_hash = ${tokenHash}
 	`;
 
 	if (rows.length === 0) {
@@ -86,7 +86,7 @@ export async function verifySession(
 	}
 
 	if (Date.now() >= rows[0].expiresAt.getTime()) {
-		await sql`DELETE FROM user_sessions WHERE token_hash = ${tokenHash}`;
+		await sql`DELETE FROM admin_sessions WHERE token_hash = ${tokenHash}`;
 		return null;
 	}
 
@@ -95,7 +95,7 @@ export async function verifySession(
 		rows[0].expiresAt = newExpiresAt;
 
 		await sql`
-          UPDATE user_sessions
+          UPDATE admin_sessions
           SET expires_at = ${newExpiresAt.toISOString()}
           WHERE token_hash = ${tokenHash}
       `;
@@ -112,7 +112,7 @@ export async function verifySession(
 	};
 }
 
-export async function insertUserSession(
+export async function insertAdminSession(
 	userId: string,
 	tokenHash: string,
 	expiresAt: Date,
@@ -121,7 +121,7 @@ export async function insertUserSession(
 	const expiresAtString = expiresAt.toISOString();
 
 	const result = await sql`
-    INSERT INTO user_sessions (user_id, token_hash, expires_at, two_factor_verified)
+    INSERT INTO admin_sessions (user_id, token_hash, expires_at, two_factor_verified)
     VALUES (${userId}, ${tokenHash}, ${expiresAtString}, ${twoFactorVerified})
     RETURNING user_id, token_hash, expires_at, two_factor_verified
   `;
@@ -164,9 +164,9 @@ export async function getSessionCookie(): Promise<CookieType> {
 	return cookieStore.get(SESSION_COOKIE_NAME);
 }
 
-export async function deleteUserSession(tokenHash: string): Promise<void> {
+export async function deleteAdminSession(tokenHash: string): Promise<void> {
 	await sql`
-    DELETE FROM user_sessions
+    DELETE FROM admin_sessions
     WHERE token_hash = ${tokenHash}
   `;
 }
