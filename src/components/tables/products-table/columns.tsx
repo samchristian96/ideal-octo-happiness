@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
+import { ArrowUpDown } from "lucide-react"; 
 
 export interface Product {
 	id: string;
@@ -83,14 +84,27 @@ export const products: Product[] = [
 	},
 ];
 
+
+
+const SortableHeader = ({ column, title }: { column: any; title: string }) => (
+	<div
+		className="flex items-center gap-2 cursor-pointer select-none font-bold"
+		onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+	>
+		{title}
+		<ArrowUpDown className="h-4 w-4" />
+	</div>
+);
+
+
 export const columns: ColumnDef<Product>[] = [
 	{
 		accessorKey: "id",
-		header: "ID",
+		header: ({ column }) => <SortableHeader column = {column} title = "ID"/>,
 	},
 	{
 		accessorKey: "name",
-		header: "Name",
+		header: ({ column }) => <SortableHeader column = {column} title = "Product Name"/>,
 		cell: ({ row }) => {
 			const id = row.original.id;
 			const name = row.getValue("name") as string;
@@ -104,7 +118,7 @@ export const columns: ColumnDef<Product>[] = [
 	},
 	{
 		accessorKey: "brand",
-		header: "Brand",
+		header: ({ column }) => <SortableHeader column = {column} title = "Brand"/>,
 		cell: ({ row }) => {
 			const brandId = row.original.brandId;
 			const brand = row.getValue("brand") as string;
@@ -118,7 +132,7 @@ export const columns: ColumnDef<Product>[] = [
 	},
 	{
 		accessorKey: "category",
-		header: "Category",
+		header: ({ column }) => <SortableHeader column = {column} title = "Category"/>,
 		cell: ({ row }) => {
 			const categoryId = row.original.categoryId;
 			const category = row.getValue("category") as string;
@@ -132,7 +146,7 @@ export const columns: ColumnDef<Product>[] = [
 	},
 	{
 		accessorKey: "price",
-		header: "Price",
+		header: ({ column }) => <SortableHeader column = {column} title = "Price"/>,
 		cell: ({ row }) => {
 			const amount = parseFloat(row.getValue("price"));
 			const currency = row.original.currency;
@@ -147,7 +161,7 @@ export const columns: ColumnDef<Product>[] = [
 	},
 	{
 		accessorKey: "stock",
-		header: "Stock Level",
+		header: ({ column }) => <SortableHeader column = {column} title = "Stock Level"/>,
 		cell: ({ row }) => {
 			const stock = row.getValue("stock") as number;
 			return stock > 5 ? stock : `${stock} (Low Stock)`;
@@ -155,7 +169,7 @@ export const columns: ColumnDef<Product>[] = [
 	},
 	{
 		accessorKey: "status",
-		header: "Status",
+		header: ({ column }) => <SortableHeader column = {column} title = "Status"/>,
 		cell: ({ row }) => {
 			const status = row.getValue("status") as string;
 			return status.charAt(0).toUpperCase() + status.slice(1);
@@ -163,7 +177,7 @@ export const columns: ColumnDef<Product>[] = [
 	},
 	{
 		accessorKey: "lastUpdated",
-		header: "Last Updated",
+		header: ({ column }) => <SortableHeader column = {column} title = "Last Updated"/>,
 		cell: ({ row }) => {
 			const date = new Date(row.getValue("lastUpdated"));
 			return date.toLocaleDateString("en-US", {

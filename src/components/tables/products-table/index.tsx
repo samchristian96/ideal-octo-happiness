@@ -1,9 +1,13 @@
 "use client";
 
+import * as React from "react"; // change 1
+
 import {
 	type ColumnDef,
+	type SortingState, // change 2
 	flexRender,
 	getCoreRowModel,
+	getSortedRowModel, // change 3
 	useReactTable,
 } from "@tanstack/react-table";
 
@@ -30,10 +34,20 @@ export function ProductsTable<TData, TValue>(
 ): React.JSX.Element {
 	const { columns, data, caption, footer } = props;
 
+	const [sorting, setSorting] = React.useState<SortingState>([]); // change 4
+
 	const table = useReactTable({
 		data,
 		columns,
 		getCoreRowModel: getCoreRowModel(),
+
+		//change 5
+		onSortingChange: setSorting,
+		getSortedRowModel: getSortedRowModel(),
+		state: {
+			sorting,
+		},
+
 	});
 
 	return (
@@ -80,4 +94,6 @@ export function ProductsTable<TData, TValue>(
 			{footer && <TableFooter>{footer}</TableFooter>}
 		</Table>
 	);
+}
+
 }
