@@ -1,13 +1,13 @@
-import { sha256 } from "@oslojs/crypto/sha2";
-import { encodeBase32NoPadding, encodeHexLowerCase } from "@oslojs/encoding";
-import { sql } from "bun";
-import { cookies } from "next/headers";
+import {
+	deleteCookie,
+	getCookie,
+	setCookie,
+} from "@tanstack/react-start/server";
 import { cache } from "react";
+import { hashToken } from "~/auth/utils";
 
 const SESSION_COOKIE_NAME = "admin_session";
 const DAY_IN_MS = 1000 * 60 * 60 * 24;
-
-type CookieType = ReturnType<Awaited<ReturnType<typeof cookies>>["get"]>;
 
 interface SessionCookieConfig {
 	path: string;
@@ -24,7 +24,7 @@ const COOKIE_CONFIG: SessionCookieConfig = {
 };
 
 interface InsertedSession {
-	userId: string;
+	adminId: string;
 	tokenHash: string;
 	expiresAt: Date;
 	twoFactorVerified: boolean;
@@ -32,7 +32,7 @@ interface InsertedSession {
 
 export interface SessionData {
 	sessionId: string;
-	userId: string;
+	adminId: string;
 	expiresAt: Date;
 	twoFactorVerified: boolean;
 	email: string;
@@ -40,21 +40,8 @@ export interface SessionData {
 	hasTotp: boolean;
 }
 
-export function hashToken(token: string): string {
-	const data = new TextEncoder().encode(token);
-	const hash = sha256(data);
-	return encodeHexLowerCase(hash);
-}
-
-export async function createSessionToken(): Promise<string> {
-	const token = new Uint8Array(32);
-	crypto.getRandomValues(token);
-	return encodeBase32NoPadding(token);
-}
-
-export const getUserSession = cache(async (): Promise<SessionData | null> => {
-	const cookieStore = await cookies();
-	const token = cookieStore.get(SESSION_COOKIE_NAME)?.value ?? null;
+export const getAdminSession = cache(async (): Promise<SessionData | null> => {
+	const token = getCookie(SESSION_COOKIE_NAME) ?? null;
 
 	if (token === null) {
 		return null;
@@ -66,27 +53,27 @@ export const getUserSession = cache(async (): Promise<SessionData | null> => {
 export async function verifySession(
 	tokenHash: string,
 ): Promise<SessionData | null> {
-	const rows = await sql<SessionData[]>`
-		SELECT
-			admin_sessions.token_hash AS "sessionId",
-			admin_sessions.user_id AS "userId",
-			admin_sessions.expires_at AS "expiresAt",
-			admin_sessions.two_factor_verified AS "twoFactorVerified",
-			admins.email,
-			admins.email_verified AS "emailVerified",
-			(user_totp.user_id IS NOT NULL) AS "hasTotp"
-		FROM admin_sessions
-		INNER JOIN admins ON admin_sessions.user_id = admins.id
-		LEFT JOIN admin_totp ON admin_sessions.id = admin_totp.user_id
-		WHERE admin_sessions.token_hash = ${tokenHash}
-	`;
+	const rows = await Bun.sql<SessionData[]>`
+    SELECT
+      admin_sessions.token_hash AS "sessionId",
+      admin_sessions.admin_id AS "adminId",
+      admin_sessions.expires_at AS "expiresAt",
+      admin_sessions.two_factor_verified AS "twoFactorVerified",
+      admins.email,
+      admins.email_verified AS "emailVerified",
+      (admin_totp.admin_id IS NOT NULL) AS "hasTotp"
+    FROM admin_sessions
+    INNER JOIN admins ON admin_sessions.admin_id = admins.id
+    LEFT JOIN admin_totp ON admin_sessions.id = admin_totp.admin_id
+    WHERE admin_sessions.token_hash = ${tokenHash}
+  `;
 
 	if (rows.length === 0) {
 		return null;
 	}
 
 	if (Date.now() >= rows[0].expiresAt.getTime()) {
-		await sql`DELETE FROM admin_sessions WHERE token_hash = ${tokenHash}`;
+		await Bun.sql`DELETE FROM admin_sessions WHERE token_hash = ${tokenHash}`;
 		return null;
 	}
 
@@ -94,7 +81,7 @@ export async function verifySession(
 		const newExpiresAt = new Date(Date.now() + DAY_IN_MS * 30);
 		rows[0].expiresAt = newExpiresAt;
 
-		await sql`
+		await Bun.sql`
           UPDATE admin_sessions
           SET expires_at = ${newExpiresAt.toISOString()}
           WHERE token_hash = ${tokenHash}
@@ -103,7 +90,7 @@ export async function verifySession(
 
 	return {
 		sessionId: rows[0].sessionId,
-		userId: rows[0].userId,
+		adminId: rows[0].adminId,
 		expiresAt: rows[0].expiresAt,
 		twoFactorVerified: rows[0].twoFactorVerified,
 		email: rows[0].email,
@@ -113,23 +100,23 @@ export async function verifySession(
 }
 
 export async function insertAdminSession(
-	userId: string,
+	adminId: string,
 	tokenHash: string,
 	expiresAt: Date,
 	twoFactorVerified: boolean,
 ): Promise<InsertedSession> {
 	const expiresAtString = expiresAt.toISOString();
 
-	const result = await sql`
-    INSERT INTO admin_sessions (user_id, token_hash, expires_at, two_factor_verified)
-    VALUES (${userId}, ${tokenHash}, ${expiresAtString}, ${twoFactorVerified})
-    RETURNING user_id, token_hash, expires_at, two_factor_verified
+	const result = await Bun.sql`
+    INSERT INTO admin_sessions (admin_id, token_hash, expires_at, two_factor_verified)
+    VALUES (${adminId}, ${tokenHash}, ${expiresAtString}, ${twoFactorVerified})
+    RETURNING admin_id, token_hash, expires_at, two_factor_verified
   `;
 
 	const row = result[0];
 
 	return {
-		userId: row.user_id,
+		adminId: row.admin_id,
 		tokenHash: row.token_hash,
 		expiresAt: new Date(row.expires_at),
 		twoFactorVerified: row.two_factor_verified,
@@ -138,40 +125,33 @@ export async function insertAdminSession(
 
 export async function verifySessionTwoFactor(
 	tokenHash: string,
-	userId: string,
+	adminId: string,
 ): Promise<void> {
-	await sql`
-    UPDATE user_sessions
+	await Bun.sql`
+    UPDATE admin_sessions
     SET two_factor_verified = true
-    WHERE token_hash = ${tokenHash} AND user_id = ${userId}
+    WHERE token_hash = ${tokenHash} AND admin_id = ${adminId}
   `;
 }
 
-export async function setSessionCookie(
-	token: string,
-	expiresAt: Date,
-): Promise<void> {
-	const cookieStore = await cookies();
-
-	cookieStore.set(SESSION_COOKIE_NAME, token, {
+export function setSessionCookie(token: string, expiresAt: Date): void {
+	setCookie(SESSION_COOKIE_NAME, token, {
 		...COOKIE_CONFIG,
 		expires: expiresAt,
 	});
 }
 
-export async function getSessionCookie(): Promise<CookieType> {
-	const cookieStore = await cookies();
-	return cookieStore.get(SESSION_COOKIE_NAME);
+export function getSessionCookie(): string | undefined {
+	return getCookie(SESSION_COOKIE_NAME);
 }
 
 export async function deleteAdminSession(tokenHash: string): Promise<void> {
-	await sql`
+	await Bun.sql`
     DELETE FROM admin_sessions
     WHERE token_hash = ${tokenHash}
   `;
 }
 
-export async function deleteSessionCookie(): Promise<void> {
-	const cookieStore = await cookies();
-	cookieStore.delete(SESSION_COOKIE_NAME);
+export function deleteSessionCookie(): void {
+	deleteCookie(SESSION_COOKIE_NAME);
 }

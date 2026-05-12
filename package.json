@@ -4,11 +4,13 @@
   "type": "module",
   "scripts": {
     "dev": "bun --bun vite dev",
-    "build": "bun --bun vite build"
+    "build": "bun --bun vite build",
+    "db:seed": "bun --bun --env-file=.env src/database/seed.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
     "@oslojs/crypto": "^1.0.1",
+    "@oslojs/encoding": "^1.1.0",
     "@oslojs/jwt": "^0.3.0",
     "@tanstack/react-router": "^1.169.2",
     "@tanstack/react-start": "^1.167.65",
